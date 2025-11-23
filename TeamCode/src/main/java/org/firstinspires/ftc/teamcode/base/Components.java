@@ -306,7 +306,7 @@ public abstract class Components {
                         double errorTol, double defaultMovementTimeout, String[] controlFuncKeys, ControlSystem<? extends Actuator<E>>... controlFuncs){
             currentPosPollingInterval=Math.max(0,currentPosPollingInterval);
             this.name=actuatorName;
-            this.device = (E) hardwareMap.get(actuatorName);
+            this.device = (E) hardwareMap.tryGet(HardwareDevice.class,actuatorName);
             this.defaultMovementTimeout = defaultMovementTimeout;
             this.errorTol=errorTol;
             CachedReader<Double> reader;
@@ -579,7 +579,9 @@ public abstract class Components {
         public CRActuator(String name, DcMotorSimple.Direction direction, Function<E, Double> getCurrentPosition, int pollingRate, double errorTol, double defaultTimeout, String[] controlFuncKeys, ControlSystem<? extends CRActuator<E>>... controlFuncs) {
             super(name, getCurrentPosition, pollingRate, errorTol, defaultTimeout,controlFuncKeys,controlFuncs);
             this.setTarget(0);
-            this.getDevice().setDirection(direction);
+            if (!Objects.isNull(this.getDevice())){
+                this.getDevice().setDirection(direction);
+            }
         }
         public CRActuator(String name, DcMotorSimple.Direction direction, Function<E, Double> getCurrentPosition) { //For CRActuators that don't set targets and only use setPower, like drivetrain motors.
             this(name,direction,getCurrentPosition, 1,0,0,new String[]{});
@@ -738,17 +740,23 @@ public abstract class Components {
             return velocityReader.get();
         }
         public void resetEncoder() { //Reset motor encoder to 0
-            getDevice().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            getDevice().setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            resetCurrentPositionCache();
+            if (!Objects.isNull(getDevice())) {
+                getDevice().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                getDevice().setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                resetCurrentPositionCache();
+            }
         }
 
         public void setZeroPowerFloat() { //Set ZeroPowerBehavior to float
-            getDevice().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            if (!Objects.isNull(getDevice())){
+                getDevice().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            }
         }
 
         public void setZeroPowerBrake() {
-            getDevice().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            if (!Objects.isNull(getDevice())){
+                getDevice().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            }
         }
         public double getCurrentAmps() { //Get the current of the motor in amps
             return currentReader.get();
