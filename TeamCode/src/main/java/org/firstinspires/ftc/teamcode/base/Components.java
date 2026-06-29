@@ -292,7 +292,7 @@ public abstract class Components {
         private double defaultMovementTimeout = Double.POSITIVE_INFINITY; //Default time waited when an actuator is commanded to a position before ending the  command.
         protected boolean actuationStateUnlocked = true; //If set to false, methods tagged with @Actuate should not have an effect; it locks the actuator in whatever power/position state it's in.
         private boolean targetStateUnlocked = true; //If set to false, the actuator's target cannot change.
-        private final HashMap<String,Double> keyPositions = new HashMap<>(); //Stores key positions, like 'transferPosition,' etc. The keys are labels for positions, and the values are the positions themselves. Useful because you only have to adjust the value corresponding to a certain position in one place.
+        private final HashMap<String,Double> keyTargets = new HashMap<>(); //Stores key targets, like 'transferPosition,' etc. The keys are labels for targets, and the values are the targets themselves. Useful because you only have to adjust the value corresponding to a certain position in one place.
         private Supplier<Double> getCurrentPositionRead = ()->0.0;
         private int currentPosPollingInterval = 1;
         private Supplier<Double> getCurrentPosition;
@@ -383,6 +383,9 @@ public abstract class Components {
                 }
             }
         }
+        public void setTarget(String key){
+            setTarget(getKeyTarget(key));
+        }
         public double getTargetMinusOffset(){
             return target-offset;
         } //Returns the target minus the offset
@@ -409,8 +412,8 @@ public abstract class Components {
                 Objects.requireNonNull(controlSystemMap.get(currControlFuncKey)).run();
             }
         }
-        public double getPos(String key){ //Returns one of the key positions based on the inputted key
-            return Objects.requireNonNull(keyPositions.get(key));
+        public double getKeyTarget(String key){ //Returns one of the key positions based on the inputted key
+            return Objects.requireNonNull(keyTargets.get(key));
         }
         public void switchControl(String key){ // Switch control of actuator.
             Objects.requireNonNull(controlSystemMap.get(currControlFuncKey)).stopAndReset();
@@ -433,9 +436,9 @@ public abstract class Components {
         protected void resetCurrentPositionCache(){
             resetCurrentPositionCache.run();
         }
-        public void setKeyPositions(String[] keyPositionKeys, double[] keyPositionValues){ //Set key targets. Input an array of labels and an array of values.
-            for (int i=0; i<keyPositionKeys.length; i++){
-                keyPositions.put(keyPositionKeys[i],keyPositionValues[i]);
+        public void setKeyTargets(String[] keyTargetKeys, double[] keyTargetValues){ //Set key targets. Input an array of labels and an array of values.
+            for (int i=0; i<keyTargetKeys.length; i++){
+                keyTargets.put(keyTargetKeys[i],keyTargetValues[i]);
             }
         }
         public E getDevice(){
@@ -476,7 +479,7 @@ public abstract class Components {
             return new InstantCommand(()->setTarget(targetFunc.get()));
         }
         public InstantCommand instantSetTargetCommand(String position){ //Whenever a setTarget, setPower, or setVelocity method takes a String label, it will get the value corresponding to that label in the keyPositions/keyPowers/keyVelocities hashmap.
-            return new InstantCommand(()->setTarget(getPos(position)));
+            return new InstantCommand(()->setTarget(getKeyTarget(position)));
         }
         public MoveToTargetCommand moveToTargetCommand(double target){ //Command to move to a target and wait for it to get there
             return new MoveToTargetCommand(target);
@@ -491,10 +494,10 @@ public abstract class Components {
             return new MoveToTargetCommand(targetFunc);
         }
         public MoveToTargetCommand moveToTargetCommand(String position){
-            return new MoveToTargetCommand(getPos(position));
+            return new MoveToTargetCommand(getKeyTarget(position));
         }
         public MoveToTargetCommand moveToTargetCommand(String position,double timeout){
-            return new MoveToTargetCommand(getPos(position),timeout);
+            return new MoveToTargetCommand(getKeyTarget(position),timeout);
         }
         public MoveToTargetCommand toggleTargetCommand(double target1, double target2){
             return moveToTargetCommand(()->{
@@ -727,7 +730,6 @@ public abstract class Components {
         private boolean isStallResetting;
         private Supplier<Double> velocityReader = ()->0.0;
         private Supplier<Double> currentReader = ()->0.0;
-        private final HashMap<String,Double> keyVelocities = new HashMap<>(); //Stores key velocities, like 'intakeVelocity,' etc.
         private Supplier<Double> maxVelocityFunc = ()->Double.POSITIVE_INFINITY;
         private Supplier<Double> minVelocityFunc = ()->Double.NEGATIVE_INFINITY;
         private DcMotor.ZeroPowerBehavior zeroPowerBehavior = DcMotor.ZeroPowerBehavior.BRAKE;
@@ -750,12 +752,6 @@ public abstract class Components {
             this.maxVelocityFunc=maxVelocityFunc;
             return this;
         }
-        public BotMotor setKeyVelocities(String[] keyVelocityKeys, double[] keyVelocityValues){
-            for (int i=0; i<keyVelocityKeys.length; i++){
-                keyVelocities.put(keyVelocityKeys[i],keyVelocityValues[i]);
-            }
-            return this;
-        }
         public BotMotor setVelocityFilter(Function<BotMotor,Double> velFilter){ //Allows you to set a custom function, like a Kalman filter, to determine the velocity of the motor.
             velocityReader=new CachedReader<>(()->velFilter.apply(this),1)::cachedRead;
             return this;
@@ -767,9 +763,6 @@ public abstract class Components {
         public BotMotor setInitialZeroPowerBehavior(DcMotor.ZeroPowerBehavior zeroPowerBehavior){
             this.zeroPowerBehavior = zeroPowerBehavior;
             return this;
-        }
-        public double getKeyVelocity(String key){
-            return Objects.requireNonNull(keyVelocities.get(key));
         }
         public double getVelocity() { //Get the motor's velocity
             return velocityReader.get();
