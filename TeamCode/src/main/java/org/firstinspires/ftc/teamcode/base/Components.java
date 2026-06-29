@@ -436,10 +436,11 @@ public abstract class Components {
         protected void resetCurrentPositionCache(){
             resetCurrentPositionCache.run();
         }
-        public void setKeyTargets(String[] keyTargetKeys, double[] keyTargetValues){ //Set key targets. Input an array of labels and an array of values.
+        public <Z extends Actuator<E>> Z setKeyTargets(String[] keyTargetKeys, double[] keyTargetValues){ //Set key targets. Input an array of labels and an array of values.
             for (int i=0; i<keyTargetKeys.length; i++){
                 keyTargets.put(keyTargetKeys[i],keyTargetValues[i]);
             }
+            return (Z) this;
         }
         public E getDevice(){
             return this.device;
