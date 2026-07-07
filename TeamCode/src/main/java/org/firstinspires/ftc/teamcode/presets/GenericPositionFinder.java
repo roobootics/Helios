@@ -73,6 +73,6 @@ public abstract class GenericPositionFinder extends LinearOpMode { //Used to fin
                 ),
                 new Commands.PowerOnCommand()
         );
-        executor.runLoop(this::opModeIsActive);
+        executor.run(this::opModeIsActive);
     }
 }

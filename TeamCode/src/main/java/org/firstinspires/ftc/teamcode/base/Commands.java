@@ -1091,7 +1091,7 @@ public abstract class Commands { //Command-based system
             updateTelemetry();
             Components.CachedReader.updateResetAllCaches();
         }
-        public void runLoop(Supplier<Boolean> condition){
+        public void run(Supplier<Boolean> condition){
             while (condition.get()){
                 runOnce();
             }
@@ -1102,14 +1102,18 @@ public abstract class Commands { //Command-based system
                 command.stop();
             }
         }
-        public void addCommand(Command command){
-            command.reset();
-            commandsToAdd.add(command);
+        public void addCommands(Command ... commands){
+            for (Command command : commands){
+                command.reset();
+                commandsToAdd.add(command);
+            }
         }
-        public void removeCommand(Command command){
-            command.stop();
-            if (this.commands.contains(command)) {
-                commandsToRemove.add(command);
+        public void removeCommands(Command ... commands){
+            for (Command command : commands){
+                command.stop();
+                if (this.commands.contains(command)) {
+                    commandsToRemove.add(command);
+                }
             }
         }
     }
