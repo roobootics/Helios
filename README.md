@@ -1,12 +1,12 @@
 ## NOTICE
 
-This repository contains the public FTC SDK for the INTO THE DEEP (2024-2025) competition season.
+This repository contains the public FTC SDK for the BIOBUZZ (2026-2027) competition season.
 
 ## Welcome!
 This GitHub repository contains the source code that is used to build an Android app to control a *FIRST* Tech Challenge competition robot.  To use this SDK, download/clone the entire project to your local computer.
 
 ## Requirements
-To use this Android Studio project, you will need Android Studio Ladybug (2024.2) or later.
+To use this Android Studio project, you will need Android Studio Narwhal 3 Feature Drop or later.
 
 To program your robot in Blocks or OnBot Java, you do not need Android Studio.
 
@@ -58,6 +58,188 @@ Samples Folder: &nbsp;&nbsp; [/FtcRobotController/src/main/java/org/firstinspire
 The readme.md file located in the [/TeamCode/src/main/java/org/firstinspires/ftc/teamcode](TeamCode/src/main/java/org/firstinspires/ftc/teamcode) folder contains an explanation of the sample naming convention, and instructions on how to copy them to your own project space.
 
 # Release Information
+
+## Version 12.0 (20260907-090034)
+
+### Breaking Changes
+* The new AprilTag Cluster capability breaks legacy AprilTag OpModes resulting in compile errors for software that uses AprilTagDetection objects in both Android Studio and OnBot Java.
+  * Legacy AprilTag OpModes must be updated to check whether the returned AprilTag is a cluster or singleton,
+     and cast the returned detection into the correct type to access its elements.  See below:    
+     
+	 **Old method for AprilTag processing**
+    ```
+     for (AprilTagDetection detection : currentDetections) {
+       // Do single Tag processing here  
+     }
+    ```
+
+     **New method for AprilTag Singleton/Cluster processing**
+
+    ```
+     for (AprilTagDetection detection : currentDetections) {
+       if (detection instanceof AprilTagSingleDetection) {
+         AprilTagSingleDetection singleDet = (AprilTagSingleDetection) detection;
+         // Do single Tag processing here  
+       } else {
+         AprilTagClusterDetection clusterDet = (AprilTagClusterDetection) detection;
+         // Do cluster Tag processing here  
+       }
+     }
+     ```
+    For more information about how to update your OpModes to fix the breaking change see: https://ftc-docs.firstinspires.org/apriltag-clusters
+    
+  * About AprilTag clusters:  
+    * Clusters are co-planar groups of two or more AprilTags wherein the position of each member tag is defined relative to a common origin
+    * This origin may be placed outside the bounds of the tags themselves to provide a more suitable "aiming" target
+    * Clusters are resilient to partial occlusion. Full 6DOF pose can be estimated from a cluster even if only a single member tag is visible. Of course, the more tags that are visible, the better and more stable the pose estimate will be
+    * All AprilTag samples have been updated to differentiate between standalone tags and clusters
+  
+### Enhancements
+* Adds a tree view for robot configurations [issue 1821](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1821)
+* Gamepad indicators on the Driver Station are now colored orange if the respective gamepads are connected to the Android generic gamepad driver instead of the Driver Station's usermode USB driver 
+* Updated AprilTag Library for BIOBUZZ. Notably, getCurrentGameTagLibrary() now returns BIOBUZZ tags.
+  * In BIOBUZZ, the Origin of each cluster is located in the center of the Cell opening for easy aiming.
+  * The Origin X,Y & Z Axes are now displayed by default on the preview image.
+  * <B>Unfortunately, since BIOBUZZ AprilTags move, they are not suitable for absolute Field Localization.</B>
+* Supports OctoQuad MK2 firmware v3.1.0, which adds diagnostics parameters for the IMU and MCU uptime
+
+### Bug Fixes
+* Fixes issue [2078](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/2078) where battery
+voltage was not updated on driver station if OpMode did not send any telemetry.
+
+## Version 11.2.1 (20260724-093406)
+
+### Bug Fixes
+* Fixes issue [2099](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/2099). Gradle and the AGP are now updated to 9.1 and 8.13.2 respectively.
+ 
+## Version 11.2 (20260707-102819)
+
+### Breaking Changes
+* Gradle is upgraded to v9.1 and the Android Gradle Plugin is updated to v8.13.2.  AGP v8.13.2 requires Android Studio Narwhal 3 Feature Drop or later.  Earlier versions of Android Studio will fail to sync the project.  Older versions of Android Studio may prompt the user to downgrade AGP.  Do not do this.  Gradle v9.1 removed support for features that older versions of the AGP use. Updating Gradle fixes a Windows 11 problem some teams may encounter if they have agressive security software installed on their machine.  For more context see [this Gradle issue](https://github.com/gradle/gradle/issues/31438)
+
+### Enhancements
+* New type of OpMode is now available. (`@Utility`)
+   * Utility opmodes that are not disabled will show up in the Utility menu (requires 11.2 or later DS and RC) 
+* TestHardware Utility now available
+  * It allows you to test all servos, CR servos, motors, Color sensors, distance sensors, touch sensors, IMUs, webcams, and analog sensors in the config
+* TestGamepad Utility now available
+  * It allows you to see the results of your two gamepads to make sure it is what you expect and find problems with your gamepads. 
+* Adds methods to PwmControl interface to allow you to setPulseWidth and getPulseWidth 
+   * Both of these are in microseconds (uSeconds)
+   * This is an ADVANCED feature.   There is not a supporting sample.
+   * NOTE: You may see a slight difference since the hardware is not accurate to the microsecond
+* Adds ability to set UVC camera "quirks" from user code to control compatibility flags used inside the low level UVC driver. Addresses issue [1428](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1428)
+* Changes Apriltag Axis Display order on camera preview screen, to reflect updated Z axis direction.
+* The Driver Station app init button has a light teal background with the word init if
+   * the driver station and robot controller are connected and have the same team number
+   * there is at least one gamepad attached
+   * the timer is enabled (for an Autonomous OpMode)
+
+### Bug Fixes
+* Fixes issue [1949](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1949) overwriting the group with the default group when registering a OpMode with OpModeManager.register(OpModeMeta name, Class<? extends OpMode> clazz)
+* Fixes issue mentioned in [1890](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1890) where if 
+  for a servo you change the direction or scaleRange and send the same setPosition that was sent 
+  before, then it wouldn't update the servo.
+* Fixes an issue where Self-Inspect doesn't flag a driver station using -RC in it's name. The message is now:
+  * The team numbers in the robot controller and driver station names do not match, or a device name is invalid. Refer to the FTC Competition Manual for device naming rules.
+
+## Version 11.1 (20251231-104637)
+
+### Enhancements
+
+* Gamepad triggers can now be accessed as booleans and have edge detection supported.
+* GoBildaPinpointDriver now supports Pinpoint v2 functionality
+* Adds webcam calibrations for goBILDA's USB camera.
+
+### Bug Fixes
+* Fixes issue [1654](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1654) in GoBildaPinpointDriver that caused error if resolution was set in other than MM
+* Fixes issue [1628](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1628) Blocks editor displays incorrect Java code for gamepad edge detection blocks.
+* Fixes possible race condition issue [1884](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1884) on Driver Station startup when Driver Station name doesn't match the Robot Controller name.
+* Fixes issue [1863](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1863) - Incorrect package paths in samples.
+* Fixes an issue where an OnBotJava filename that begins with a lowercase character would fail to properly rename the file if the user tried to rename it so that it begins with an uppercase character.
+
+## Version 11.0 (20250827-105138)
+
+### Enhancements
+
+* OnBotJava now has the concept of a project.  
+  A project is a collection of related files.  A project may be chosen by selecting 'Example Project'
+  from the 'File type:' dropdown.  Doing so will populate the dropdown to the immediate right with 
+  a list of projects to choose from.
+  When selecting a project all of the related files appear in the left pane of the workspace 
+  underneath a directory with the chosen project name.
+  This is useful for example for ConceptExternalHardwareClass which has a dependency upon
+  RobotHardware.  This feature simplifies the usage of this Concept example by automatically
+  pulling in dependent classes.
+* Adds support for AndyMark ToF, IMU, and Color sensors.
+* The Driver Station app indicates if WiFi is disabled on the device.
+* Adds several features to the Color Processing software:
+  * DECODE colors `ARTIFACT_GREEN` and `ARTIFACT_PURPLE`
+  * Choice of the order of pre-processing steps Erode and Dilate
+  * Best-fit preview shape called `circleFit`, an alternate to the existing `boxFit`
+  * Sample OpMode `ConceptVisionColorLocator_Circle`, an alternate to the renamed `ConceptVisionColorLocator_Rectangle`
+* The Driver Station app play button has a green background with a white play symbol if
+  * the driver station and robot controller are connected and have the same team number
+  * there is at least one gamepad attached
+  * the timer is enabled (for an Autonomous OpMode)
+* Updated AprilTag Library for DECODE. Notably, getCurrentGameTagLibrary() now returns DECODE tags.
+  * Since the AprilTags on the Obelisk should not be used for localization, the ConceptAprilTagLocalization samples only use those tags without the name 'Obelisk' in them.
+* OctoQuad I2C driver updated to support firmware v3.x 
+  * Adds support for odometry localizer on MK2 hardware revision
+  * Adds ability to track position for an absolute encoder across multiple rotations
+  * Note that some driver APIs have changed; minor updates to user software may be required
+  * Requires firmware v3.x. For instructions on updating firmware, see
+    https://github.com/DigitalChickenLabs/OctoQuad/blob/master/documentation/OctoQuadDatasheet_Rev_3.0C.pdf
+
+
+## Version 10.3 (20250625-090416)
+
+### Breaking Changes
+* The behavior of setGlobalErrorMsg() is changed.  Note that this is an SDK internal method that is not 
+  meant to be used by team software or third party libraries.  Teams or libraries using this method should
+  find another means to communicate failure.  The design intent of setGlobalErrorMsg() is to report an 
+  error and force the user to restart the robot, which in certain circumstances when used inappropriately
+  could cause a robot to continue running while Driver Station controls are disabled.  To prevent this,
+  processing of a call to setGlobalErrorMsg() is deferred until the robot is in a known safe state.  This may
+  mean that a call to setGlobalErrorMsg() that does not also result in stopping a running OpMode will appear
+  as though nothing happened until the robot is stopped, at which point, if clearGlobalErrorMsg() has not 
+  been called the message will appear on the Driver Station and a restart will be required.
+  Addresses issue [1381](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1381)
+* Fixes getLatestResult in Limelight3A so if the Limelight hasn't provided data yet, it still returns an LLResult but valid will be false
+  * If you previously used to check and see if this was `null` to see if the Limelight had been contacted, you now need to use `isValid()` on the result.  That is because now it always returns an LLResult even before it talks to the Limelight, but if it doesn't have valid data, the `isValid()` will be `false`.
+* Changed all omni samples to use front_left_drive, front_right_drive, back_left_drive, back_right_drive
+  * This is only breaking for you if you copy one of the changed samples to your own project and expect to use the same robot configuration as before.
+
+### Known Issues
+* The redesigned OnBotJava new file workflow allows the user to use a lowercase letter as the first character of a filename.
+  This is a regression from 10.2 which required the first character to be uppercase.  Software will build, but if the user tries
+  to rename the file, the rename will fail.
+
+### Enhancements
+* Adds a configuration item for a Full Range Servo.  Selecting this item expands the pulse width range from 500us to 2500us.  For comparison, the legacy Servo type defines the pulse width range as 600us to 2400us.
+* Improved the OBJ new file creation flow workflow. The new flow allows you to easily use samples, craft new custom OpModes and make new Java classes.
+* Added support for gamepad edge detection.
+  * A new sample program `ConceptGamepadEdgeDetection` demonstrates its use.
+* Adds a blackboard member to the Opmode that maintains state between opmodes (but not between robot resets).  See the ConceptBlackboard sample for how to use it.
+* Updated PredominantColorProcessor to also return the predominant color in RGB, HSV and YCrCb color spaces.  Updated ConceptVisionColorSensor sample OpMode to display the getAnalysis() result in all three color spaces.
+* Adds support for the GoBilda Pinpoint 
+  * Also adds `SensorGoBildaPinpoint` sample to show how to use it
+* Added `getArcLength()` and `getCircularity()` to ColorBlobLocatorProcessor.Blob.  Added BY_ARC_LENGTH and BY_CIRCULARITY as additional BlobCriteria.
+* Added `filterByCriteria()` and `sortByCriteria()` to ColorBlobLocatorProcessor.Util.
+  * The filter and sort methods for specific criteria have been deprecated.
+  * The updated sample program `ConceptVisionColorLocator` provides more details on the new syntax.
+* Add Help menu item and Help page that is available when connected to the robot controller via Program and Manage. The Help page has links to team resources such as [FTC Documentation](https://ftc-docs.firstinspires.org/), [FTC Discussion Forums](https://ftc-community.firstinspires.org), [Java FTC SDK API Documentation](https://javadoc.io/doc/org.firstinspires.ftc), and [FTC Game Information](https://ftc.game/).
+* Self inspection changes:
+  * List both the Driver Station Name and Robot Controller Name when inspecting the Driver Station.
+  * Report if the team number portion of the device names do not match.
+  * -rc is no longer valid as part of a Robot Controller name, must be -RC.
+  * Use Robot Controller Name or Driver Station Name labels on the inspection screens instead of WIFI Access Point or WIFI Direct Name.
+
+### Bug Fixes
+* Fixes issue [1478](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1478) in AnnotatedHooksClassFilter that ignored exceptions if they occur in one of the SDK app hooks.
+* Fix initialize in distance sensor (Rev 2m) to prevent bad data in first call to getDistance.
+* Fixes issue [1470](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1470) Scaling a servo range is now irrespective of reverse() being called.  For example, if you set the scale range to [0.0, 0.5] and the servo is reversed, it will be from 0.5 to 0.0, NOT 1.0 to 0.5.
+* Fixes issue [1232](https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1232), a rare race condition where using the log rapidly along with other telemetry could cause a crash.
 
 ## Version 10.2 (20250121-174034)
 
@@ -1514,7 +1696,7 @@ Changes include:
  * Updated compileSdkVersion for apps
  * Prevent Wi-Fi from entering power saving mode
  * removed unused import from driver station
- * Corrected "Dead zone" joystick code.
+ * Corrrected "Dead zone" joystick code.
  * LED.getDeviceName and .getConnectionInfo() return null
  * apps check for ROBOCOL_VERSION mismatch
  * Fix for Telemetry also has off-by-one errors in its data string sizing / short size limitations error
