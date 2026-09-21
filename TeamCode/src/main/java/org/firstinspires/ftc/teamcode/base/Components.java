@@ -310,6 +310,8 @@ public abstract class Components {
             for (ControlSystem<?> system : controlSystemMap.values()){
                 system.stopAndReset();
             }
+            controlSystemMap.clear();
+            controlSystemMap.put("controlOff",new ControlSystem<>());
             CachedReader<Double> reader = new CachedReader<>(()->{if (Objects.nonNull(device)) return getCurrentPositionRead.get(); else return 0.0;},currentPosPollingInterval,true);
             this.getCurrentPosition=reader::cachedRead;
             resetCurrentPositionCache = reader::resetCache;
@@ -332,8 +334,6 @@ public abstract class Components {
             for (ControlSystem<Z> system:controlFuncs){
                 system.registerToActuator((Z) this);
             }
-            controlSystemMap.clear();
-            controlSystemMap.put("controlOff",new ControlSystem<>());
             for (int i=0;i< controlFuncKeys.length;i++){
                 controlSystemMap.put(controlFuncKeys[i],controlFuncs[i]);
             }
